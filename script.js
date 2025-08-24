@@ -24,11 +24,50 @@ let learningData = {
     }
 };
 
+// הוספת הודעה לקונסול
+function logToConsole(type, message) {
+    const consoleContent = document.getElementById('consoleContent');
+    if (!consoleContent) return;
+    
+    const timestamp = new Date().toLocaleTimeString('he-IL');
+    
+    const line = document.createElement('div');
+    line.className = `console-line ${type}`;
+    line.innerHTML = `
+        <span class="console-time">[${timestamp}]</span>
+        <span class="console-message">${message}</span>
+    `;
+    
+    consoleContent.appendChild(line);
+    consoleContent.scrollTop = consoleContent.scrollHeight;
+}
+
+// הוספת הודעת צ'אט
+function addChatMessage(type, message) {
+    const chatMessages = document.getElementById('chatMessages');
+    if (!chatMessages) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${type}`;
+    messageDiv.textContent = message;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // הגבלה למקסימום 10 הודעות
+    const messages = chatMessages.querySelectorAll('.chat-message');
+    if (messages.length > 10) {
+        messages[0].remove();
+    }
+}
+
 // עדכון אינדיקטור חיבור
 function updateConnectionStatus(status, text, details = null) {
     const dot = document.getElementById('connectionStatus');
     const textEl = document.getElementById('connectionText');
     const detailsEl = document.getElementById('connectionDetails');
+    
+    if (!dot || !textEl) return;
     
     // ניקוי מחלקות קיימות
     dot.className = 'status-dot';
@@ -58,9 +97,9 @@ function updateConnectionStatus(status, text, details = null) {
     }
     
     // הצגת פרטים טכניים
-    if (details) {
+    if (details && detailsEl) {
         showConnectionDetails(details);
-    } else {
+    } else if (detailsEl) {
         detailsEl.classList.remove('show');
     }
 }
@@ -68,6 +107,7 @@ function updateConnectionStatus(status, text, details = null) {
 // הצגת פרטים טכניים על החיבור
 function showConnectionDetails(details) {
     const detailsEl = document.getElementById('connectionDetails');
+    if (!detailsEl) return;
     
     let html = '<strong>פרטי חיבור:</strong><br>';
     
@@ -83,6 +123,8 @@ function showConnectionDetails(details) {
 // הגדרת API Key
 function setupAPI() {
     const input = document.getElementById('apiKey');
+    if (!input) return;
+    
     const key = input.value.trim();
     
     if (!key) {
@@ -111,13 +153,17 @@ function updateApiStatus(type, message) {
     const status = document.getElementById('apiStatus');
     const setup = document.getElementById('apiSetup');
     
-    status.textContent = message;
-    status.className = `api-status ${type}`;
+    if (status) {
+        status.textContent = message;
+        status.className = `api-status ${type}`;
+    }
     
-    if (type === 'success') {
-        setup.classList.add('configured');
-    } else {
-        setup.classList.remove('configured');
+    if (setup) {
+        if (type === 'success') {
+            setup.classList.add('configured');
+        } else {
+            setup.classList.remove('configured');
+        }
     }
 }
 
@@ -296,7 +342,13 @@ async function executeInstructions() {
         return;
     }
     
-    const instructions = document.getElementById('instructions').value.trim();
+    const instructionsEl = document.getElementById('instructions');
+    if (!instructionsEl) {
+        addChatMessage('error', 'שגיאה: לא נמצא שדה ההוראות');
+        return;
+    }
+    
+    const instructions = instructionsEl.value.trim();
     
     if (!instructions) {
         addChatMessage('error', 'אנא כתב הוראות למחולל');
@@ -312,8 +364,11 @@ async function executeInstructions() {
     
     try {
         // עדכון UI
-        document.getElementById('executeBtn').textContent = 'מעבד...';
-        document.getElementById('executeBtn').disabled = true;
+        const executeBtn = document.getElementById('executeBtn');
+        if (executeBtn) {
+            executeBtn.textContent = 'מעבד...';
+            executeBtn.disabled = true;
+        }
         
         updateConnectionStatus('connecting', 'מייצר אפליקציה...');
         addChatMessage('system', 'מתחיל ליצור אפליקציה לפי ההוראות שלך...');
@@ -385,8 +440,11 @@ ${instructions}
     } finally {
         // איפוס UI
         isProcessing = false;
-        document.getElementById('executeBtn').textContent = 'צור אפליקציה';
-        document.getElementById('executeBtn').disabled = false;
+        const executeBtn = document.getElementById('executeBtn');
+        if (executeBtn) {
+            executeBtn.textContent = 'צור אפליקציה';
+            executeBtn.disabled = false;
+        }
     }
 }
 
@@ -399,7 +457,9 @@ function displayGeneratedCode(htmlCode, instructions) {
         
         // הצגה בתצוגה המקדימה
         const previewFrame = document.getElementById('previewFrame');
-        previewFrame.src = url;
+        if (previewFrame) {
+            previewFrame.src = url;
+        }
         
         // שמירת הקוד למשתנה גלובלי
         currentVersion = {
@@ -466,3 +526,261 @@ async function saveCurrentProject() {
         logToConsole('error', 'שגיאה בשמירה: ' + error.message);
     }
 }
+
+// טעינת נתונים משמורים
+function loadSavedData() {
+    try {
+        const savedApiKey = localStorage.getItem('apiKey');
+        const savedLearningData = localStorage.getItem('learningData');
+        const savedVersions = localStorage.getItem('versions');
+        
+        if (savedApiKey) {
+            apiKey = savedApiKey;
+            const apiKeyEl = document.getElementById('apiKey');
+            if (apiKeyEl) {
+                apiKeyEl.value = savedApiKey;
+            }
+            updateApiStatus('success', 'מפתח API טעון מהזיכרון');
+            updateConnectionStatus('disconnected', 'מפתח טעון - לחץ "בדוק חיבור"');
+        } else {
+            updateConnectionStatus('disconnected', 'אין מפתח API');
+        }
+        
+        if (savedLearningData) {
+            learningData = JSON.parse(savedLearningData);
+            updateStats();
+        }
+        
+        if (savedVersions) {
+            const versions = JSON.parse(savedVersions);
+            displayVersions(versions);
+        }
+        
+        logToConsole('info', 'נתונים שמורים נטענו בהצלחה');
+    } catch (error) {
+        logToConsole('error', 'שגיאה בטעינת נתונים שמורים: ' + error.message);
+        updateConnectionStatus('error', 'שגיאה בטעינת נתונים');
+    }
+}
+
+// שמירת נתונים
+function saveData() {
+    try {
+        localStorage.setItem('learningData', JSON.stringify(learningData));
+        logToConsole('success', 'נתונים נשמרו בהצלחה');
+    } catch (error) {
+        logToConsole('error', 'שגיאה בשמירת נתונים: ' + error.message);
+    }
+}
+
+// בחירת תיקיית שמירה
+async function selectSaveFolder() {
+    try {
+        if ('showDirectoryPicker' in window) {
+            saveFolder = await window.showDirectoryPicker();
+            const pathElement = document.getElementById('savePath');
+            if (pathElement) {
+                pathElement.textContent = saveFolder.name;
+                pathElement.classList.add('active');
+            }
+            
+            logToConsole('success', 'תיקיית שמירה נבחרה: ' + saveFolder.name);
+            addChatMessage('system', 'תיקיית השמירה נבחרה בהצלחה! כל הקבצים יישמרו שם אוטומטית');
+        } else {
+            alert('הדפדפן שלך לא תומך בבחירת תיקיות. הקבצים יורדו לתיקיית ההורדות');
+            logToConsole('warning', 'הדפדפן לא תומך ב-File System Access API');
+        }
+    } catch (error) {
+        logToConsole('error', 'שגיאה בבחירת תיקייה: ' + error.message);
+    }
+}
+
+// שמירת גרסה
+function saveVersion() {
+    if (!currentVersion) {
+        addChatMessage('error', 'אין פרויקט לשמירת גרסה');
+        return;
+    }
+    
+    try {
+        const versions = JSON.parse(localStorage.getItem('versions') || '[]');
+        const versionData = {
+            id: Date.now(),
+            instructions: currentVersion.instructions,
+            timestamp: currentVersion.timestamp,
+            code: currentVersion.code
+        };
+        
+        versions.push(versionData);
+        localStorage.setItem('versions', JSON.stringify(versions));
+        
+        displayVersions(versions);
+        addChatMessage('success', 'גרסה נשמרה בהצלחה');
+        logToConsole('success', 'גרסה חדשה נשמרה');
+        
+    } catch (error) {
+        addChatMessage('error', 'שגיאה בשמירת גרסה: ' + error.message);
+        logToConsole('error', 'שגיאה בשמירת גרסה: ' + error.message);
+    }
+}
+
+// הצגת גרסאות
+function displayVersions(versions) {
+    const versionsList = document.getElementById('versionsList');
+    if (!versionsList) return;
+    
+    if (versions.length === 0) {
+        versionsList.innerHTML = '<p style="text-align:center;color:#718096;font-size:12px;">אין גרסאות שמורות</p>';
+        return;
+    }
+    
+    versionsList.innerHTML = versions.slice(-5).reverse().map(version => `
+        <div class="version-item" onclick="loadVersion(${version.id})">
+            <div class="version-title">${version.instructions.substring(0, 30)}...</div>
+            <div class="version-time">${new Date(version.timestamp).toLocaleString('he-IL')}</div>
+        </div>
+    `).join('');
+}
+
+// טעינת גרסה
+function loadVersion(versionId) {
+    try {
+        const versions = JSON.parse(localStorage.getItem('versions') || '[]');
+        const version = versions.find(v => v.id === versionId);
+        
+        if (version) {
+            currentVersion = version;
+            displayGeneratedCode(version.code, version.instructions);
+            const instructionsEl = document.getElementById('instructions');
+            if (instructionsEl) {
+                instructionsEl.value = version.instructions;
+            }
+            
+            addChatMessage('success', 'גרסה נטענה בהצלחה');
+            logToConsole('success', 'גרסה נטענה: ' + versionId);
+        }
+    } catch (error) {
+        addChatMessage('error', 'שגיאה בטעינת גרסה: ' + error.message);
+        logToConsole('error', 'שגיאה בטעינת גרסה: ' + error.message);
+    }
+}
+
+// הצגה/הסתרת קונסול
+function toggleConsole() {
+    const overlay = document.getElementById('consoleOverlay');
+    const toggleText = document.getElementById('consoleToggleText');
+    
+    if (!overlay) return;
+    
+    consoleVisible = !consoleVisible;
+    
+    if (consoleVisible) {
+        overlay.classList.add('active');
+        if (toggleText) toggleText.textContent = 'הסתר קונסול';
+    } else {
+        overlay.classList.remove('active');
+        if (toggleText) toggleText.textContent = 'הצג קונסול';
+    }
+    
+    logToConsole('info', consoleVisible ? 'קונסול נפתח' : 'קונסול נסגר');
+}
+
+// ניקוי קונסול
+function clearConsole() {
+    const consoleContent = document.getElementById('consoleContent');
+    if (!consoleContent) return;
+    
+    consoleContent.innerHTML = '<div class="console-line info"><span class="console-time">[נוקה]</span><span class="console-message">קונסול נוקה</span></div>';
+    logToConsole('info', 'קונסול נוקה');
+}
+
+// ייצוא לוג
+function exportLog() {
+    const consoleContent = document.getElementById('consoleContent');
+    if (!consoleContent) return;
+    
+    const lines = consoleContent.querySelectorAll('.console-line');
+    
+    let logText = 'לוג מחולל האפליקציות - ' + new Date().toLocaleString('he-IL') + '\n';
+    logText += '='.repeat(50) + '\n\n';
+    
+    lines.forEach(line => {
+        const time = line.querySelector('.console-time').textContent;
+        const message = line.querySelector('.console-message').textContent;
+        logText += `${time} ${message}\n`;
+    });
+    
+    const blob = new Blob([logText], { type: 'text/plain; charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `app-generator-log-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    logToConsole('success', 'לוג יוצא בהצלחה');
+}
+
+// רענון תצוגה מקדימה
+function refreshPreview() {
+    const previewFrame = document.getElementById('previewFrame');
+    if (previewFrame && previewFrame.src && previewFrame.src !== 'about:blank') {
+        previewFrame.src = previewFrame.src;
+        logToConsole('info', 'תצוגה מקדימה רועננה');
+    }
+}
+
+// מסך מלא
+function fullscreen() {
+    const previewFrame = document.getElementById('previewFrame');
+    if (!previewFrame) return;
+    
+    if (previewFrame.requestFullscreen) {
+        previewFrame.requestFullscreen();
+    } else if (previewFrame.webkitRequestFullscreen) {
+        previewFrame.webkitRequestFullscreen();
+    }
+}
+
+// עדכון סטטיסטיקות
+function updateStats() {
+    const projectCountEl = document.getElementById('projectCount');
+    const moduleCountEl = document.getElementById('moduleCount');
+    const errorCountEl = document.getElementById('errorCount');
+    
+    if (projectCountEl) projectCountEl.textContent = learningData.stats.projectCount;
+    if (moduleCountEl) moduleCountEl.textContent = learningData.stats.moduleCount;
+    if (errorCountEl) errorCountEl.textContent = learningData.stats.errorCount;
+}
+
+// אתחול המערכת
+document.addEventListener('DOMContentLoaded', function() {
+    logToConsole('info', 'מחולל האפליקציות נטען בהצלחה');
+    loadSavedData();
+    
+    // הוספת מאזיני אירועים
+    const instructionsEl = document.getElementById('instructions');
+    if (instructionsEl) {
+        instructionsEl.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                executeInstructions();
+            }
+        });
+    }
+    
+    // טיפול בשגיאות JavaScript גלובליות
+    window.addEventListener('error', function(e) {
+        logToConsole('error', `שגיאת JavaScript: ${e.message} בקובץ ${e.filename} שורה ${e.lineno}`);
+        updateConnectionStatus('error', 'שגיאת JavaScript');
+    });
+    
+    // טיפול בדחיית Promises
+    window.addEventListener('unhandledrejection', function(e) {
+        logToConsole('error', `Promise נדחה: ${e.reason}`);
+        updateConnectionStatus('error', 'שגיאה בקוד');
+    });
+    
+    addChatMessage('system', 'ברוך הבא למחולל האפליקציות החכם! הגדר מפתח API ובדוק חיבור כדי להתחיל');
+    
+    logToConsole('success', 'מערכת מוכנה לעבודה - אינדיקטורים פעילים');
+});
