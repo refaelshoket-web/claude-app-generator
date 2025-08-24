@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/claude-api.js": {
-      "runtime": "@vercel/node@18"
-    }
-  }
-}
