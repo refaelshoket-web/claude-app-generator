@@ -289,224 +289,180 @@ async function callClaudeAPI(prompt) {
     }
 }
 
-// טעינת נתונים משמורים
-function loadSavedData() {
-    try {
-        const savedApiKey = localStorage.getItem('apiKey');
-        const savedLearningData = localStorage.getItem('learningData');
-        const savedVersions = localStorage.getItem('versions');
-        
-        if (savedApiKey) {
-            apiKey = savedApiKey;
-            document.getElementById('apiKey').value = savedApiKey;
-            updateApiStatus('success', 'מפתח API טעון מהזיכרון');
-            updateConnectionStatus('disconnected', 'מפתח טעון - לחץ "בדוק חיבור"');
-        } else {
-            updateConnectionStatus('disconnected', 'אין מפתח API');
-        }
-        
-        if (savedLearningData) {
-            learningData = JSON.parse(savedLearningData);
-            updateStats();
-        }
-        
-        if (savedVersions) {
-            const versions = JSON.parse(savedVersions);
-            displayVersions(versions);
-        }
-        
-        logToConsole('info', 'נתונים שמורים נטענו בהצלחה');
-    } catch (error) {
-        logToConsole('error', 'שגיאה בטעינת נתונים שמורים: ' + error.message);
-        updateConnectionStatus('error', 'שגיאה בטעינת נתונים');
-    }
-}
-
-// שמירת נתונים
-function saveData() {
-    try {
-        localStorage.setItem('learningData', JSON.stringify(learningData));
-        logToConsole('success', 'נתונים נשמרו בהצלחה');
-    } catch (error) {
-        logToConsole('error', 'שגיאה בשמירת נתונים: ' + error.message);
-    }
-}
-
-// בחירת תיקיית שמירה
-async function selectSaveFolder() {
-    try {
-        if ('showDirectoryPicker' in window) {
-            saveFolder = await window.showDirectoryPicker();
-            const pathElement = document.getElementById('savePath');
-            pathElement.textContent = saveFolder.name;
-            pathElement.classList.add('active');
-            
-            logToConsole('success', 'תיקיית שמירה נבחרה: ' + saveFolder.name);
-            addChatMessage('system', 'תיקיית השמירה נבחרה בהצלחה! כל הקבצים יישמרו שם אוטומטית');
-        } else {
-            alert('הדפדפן שלך לא תומך בבחירת תיקיות. הקבצים יורדו לתיקיית ההורדות');
-            logToConsole('warning', 'הדפדפן לא תומך ב-File System Access API');
-        }
-    } catch (error) {
-        logToConsole('error', 'שגיאה בבחירת תיקייה: ' + error.message);
-    }
-}
-
-// ביצוע הוראות
+// ביצוע הוראות - הפונקציה הראשית של המחולל
 async function executeInstructions() {
-    addChatMessage('system', 'הפונקציה עדיין לא מוכנה - בפיתוח');
-}
-
-// שמירת גרסה
-function saveVersion() {
-    addChatMessage('system', 'הפונקציה עדיין לא מוכנה - בפיתוח');
-}
-
-// הצגת גרסאות
-function displayVersions(versions) {
-    const versionsList = document.getElementById('versionsList');
-    
-    if (versions.length === 0) {
-        versionsList.innerHTML = '<p style="text-align:center;color:#718096;font-size:12px;">אין גרסאות שמורות</p>';
+    if (!apiKey) {
+        addChatMessage('error', 'אנא הגדר מפתח API תחילה');
         return;
     }
-}
-
-// הצגה/הסתרת קונסול
-function toggleConsole() {
-    const overlay = document.getElementById('consoleOverlay');
-    const toggleText = document.getElementById('consoleToggleText');
     
-    consoleVisible = !consoleVisible;
+    const instructions = document.getElementById('instructions').value.trim();
     
-    if (consoleVisible) {
-        overlay.classList.add('active');
-        toggleText.textContent = 'הסתר קונסול';
-    } else {
-        overlay.classList.remove('active');
-        toggleText.textContent = 'הצג קונסול';
+    if (!instructions) {
+        addChatMessage('error', 'אנא כתב הוראות למחולל');
+        return;
     }
     
-    logToConsole('info', consoleVisible ? 'קונסול נפתח' : 'קונסול נסגר');
-}
-
-// ניקוי קונסול
-function clearConsole() {
-    const consoleContent = document.getElementById('consoleContent');
-    consoleContent.innerHTML = '<div class="console-line info"><span class="console-time">[נוקה]</span><span class="console-message">קונסול נוקה</span></div>';
-    logToConsole('info', 'קונסול נוקה');
-}
-
-// ייצוא לוג
-function exportLog() {
-    const consoleContent = document.getElementById('consoleContent');
-    const lines = consoleContent.querySelectorAll('.console-line');
-    
-    let logText = 'לוג מחולל האפליקציות - ' + new Date().toLocaleString('he-IL') + '\n';
-    logText += '='.repeat(50) + '\n\n';
-    
-    lines.forEach(line => {
-        const time = line.querySelector('.console-time').textContent;
-        const message = line.querySelector('.console-message').textContent;
-        logText += `${time} ${message}\n`;
-    });
-    
-    const blob = new Blob([logText], { type: 'text/plain; charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `app-generator-log-${Date.now()}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    logToConsole('success', 'לוג יוצא בהצלחה');
-}
-
-// הוספת הודעה לקונסול
-function logToConsole(type, message) {
-    const consoleContent = document.getElementById('consoleContent');
-    const timestamp = new Date().toLocaleTimeString('he-IL');
-    
-    const line = document.createElement('div');
-    line.className = `console-line ${type}`;
-    line.innerHTML = `
-        <span class="console-time">[${timestamp}]</span>
-        <span class="console-message">${message}</span>
-    `;
-    
-    consoleContent.appendChild(line);
-    consoleContent.scrollTop = consoleContent.scrollHeight;
-}
-
-// הוספת הודעת צ'אט
-function addChatMessage(type, message) {
-    const chatMessages = document.getElementById('chatMessages');
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `chat-message ${type}`;
-    messageDiv.textContent = message;
-    
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // הגבלה למקסימום 10 הודעות
-    const messages = chatMessages.querySelectorAll('.chat-message');
-    if (messages.length > 10) {
-        messages[0].remove();
+    if (isProcessing) {
+        addChatMessage('warning', 'המחולל עדיין עובד על הבקשה הקודמת...');
+        return;
     }
-}
-
-// רענון תצוגה מקדימה
-function refreshPreview() {
-    const previewFrame = document.getElementById('previewFrame');
-    if (previewFrame.src && previewFrame.src !== 'about:blank') {
-        previewFrame.src = previewFrame.src;
-        logToConsole('info', 'תצוגה מקדימה רועננה');
-    }
-}
-
-// מסך מלא
-function fullscreen() {
-    const previewFrame = document.getElementById('previewFrame');
-    if (previewFrame.requestFullscreen) {
-        previewFrame.requestFullscreen();
-    } else if (previewFrame.webkitRequestFullscreen) {
-        previewFrame.webkitRequestFullscreen();
-    }
-}
-
-// עדכון סטטיסטיקות
-function updateStats() {
-    document.getElementById('projectCount').textContent = learningData.stats.projectCount;
-    document.getElementById('moduleCount').textContent = learningData.stats.moduleCount;
-    document.getElementById('errorCount').textContent = learningData.stats.errorCount;
-}
-
-// אתחול המערכת
-document.addEventListener('DOMContentLoaded', function() {
-    logToConsole('info', 'מחולל האפליקציות נטען בהצלחה');
-    loadSavedData();
     
-    // הוספת מאזיני אירועים
-    document.getElementById('instructions').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && e.ctrlKey) {
-            executeInstructions();
+    isProcessing = true;
+    
+    try {
+        // עדכון UI
+        document.getElementById('executeBtn').textContent = 'מעבד...';
+        document.getElementById('executeBtn').disabled = true;
+        
+        updateConnectionStatus('connecting', 'מייצר אפליקציה...');
+        addChatMessage('system', 'מתחיל ליצור אפליקציה לפי ההוראות שלך...');
+        logToConsole('info', 'מתחיל יצירת אפליקציה: ' + instructions);
+        
+        // יצירת prompt מתקדם למחולל
+        const prompt = `
+אנא צור אפליקצית HTML מלאה לפי ההוראות הבאות:
+
+${instructions}
+
+דרישות טכניות:
+1. צור קובץ HTML מלא עם CSS ו-JavaScript מוטמעים
+2. השתמש בעיצוב מודרני ונקי
+3. הוסף אנימציות ואפקטים חזותיים מתאימים
+4. ודא שהאפליקציה פונקציונלית לחלוטין
+5. הוסף הגיבות בעברית בקוד
+6. השתמש בצבעים יפים ובעיצוב מקצועי
+7. הקוד צריך להיות מלא וזמין להרצה מיד
+
+אנא החזר רק את הקוד עצמו, ללא הסברים נוספים.
+        `;
+        
+        // קריאה ל-Claude API
+        const result = await callClaudeAPI(prompt);
+        
+        if (result.success) {
+            // עיבוד התוצאה
+            let htmlCode = result.content;
+            
+            // ניקוי הקוד מטקסט מיותר
+            htmlCode = htmlCode.replace(/```html/gi, '').replace(/```/gi, '').trim();
+            
+            // יצירת קובץ והצגה בתצוגה מקדימה
+            displayGeneratedCode(htmlCode, instructions);
+            
+            // עדכון סטטיסטיקות
+            learningData.stats.projectCount++;
+            learningData.projects.push({
+                instructions: instructions,
+                timestamp: new Date().toISOString(),
+                success: true
+            });
+            saveData();
+            updateStats();
+            
+            updateConnectionStatus('connected', 'אפליקציה נוצרה בהצלחה!');
+            addChatMessage('success', 'האפליקציה נוצרה בהצלחה! אתה יכול לראות אותה בתצוגה המקדימה');
+            logToConsole('success', 'אפליקציה נוצרה בהצלחה');
+            
+        } else {
+            throw new Error(result.error);
         }
-    });
+        
+    } catch (error) {
+        // טיפול בשגיאות
+        learningData.stats.errorCount++;
+        learningData.errors.push({
+            error: error.message,
+            instructions: instructions,
+            timestamp: new Date().toISOString()
+        });
+        saveData();
+        updateStats();
+        
+        updateConnectionStatus('error', 'שגיאה ביצירת האפליקציה');
+        addChatMessage('error', 'שגיאה ביצירת האפליקציה: ' + error.message);
+        logToConsole('error', 'שגיאה ביצירה: ' + error.message);
+    } finally {
+        // איפוס UI
+        isProcessing = false;
+        document.getElementById('executeBtn').textContent = 'צור אפליקציה';
+        document.getElementById('executeBtn').disabled = false;
+    }
+}
+
+// הצגת הקוד שנוצר
+function displayGeneratedCode(htmlCode, instructions) {
+    try {
+        // יצירת Blob עם הקוד
+        const blob = new Blob([htmlCode], { type: 'text/html; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        // הצגה בתצוגה המקדימה
+        const previewFrame = document.getElementById('previewFrame');
+        previewFrame.src = url;
+        
+        // שמירת הקוד למשתנה גלובלי
+        currentVersion = {
+            code: htmlCode,
+            instructions: instructions,
+            timestamp: new Date().toISOString(),
+            url: url
+        };
+        
+        // הצגת כפתורי פעולה
+        showActionButtons();
+        
+        logToConsole('success', 'קוד HTML נוצר והוצג בתצוגה המקדימה');
+        
+    } catch (error) {
+        logToConsole('error', 'שגיאה בהצגת הקוד: ' + error.message);
+        addChatMessage('error', 'שגיאה בהצגת התוצאה');
+    }
+}
+
+// הצגת כפתורי פעולה
+function showActionButtons() {
+    const previewActions = document.getElementById('previewActions');
+    if (previewActions) {
+        previewActions.style.display = 'flex';
+    }
+}
+
+// שמירת הקוד כקובץ
+async function saveCurrentProject() {
+    if (!currentVersion) {
+        addChatMessage('error', 'אין פרויקט לשמירה');
+        return;
+    }
     
-    // טיפול בשגיאות JavaScript גלובליות
-    window.addEventListener('error', function(e) {
-        logToConsole('error', `שגיאת JavaScript: ${e.message} בקובץ ${e.filename} שורה ${e.lineno}`);
-        updateConnectionStatus('error', 'שגיאת JavaScript');
-    });
-    
-    // טיפול בדחיית Promises
-    window.addEventListener('unhandledrejection', function(e) {
-        logToConsole('error', `Promise נדחה: ${e.reason}`);
-        updateConnectionStatus('error', 'שגיאה בקוד');
-    });
-    
-    addChatMessage('system', 'ברוך הבא למחולל האפליקציות החכם! הגדר מפתח API ובדוק חיבור כדי להתחיל');
-    
-    logToConsole('success', 'מערכת מוכנה לעבודה - אינדיקטורים פעילים');
-});
+    try {
+        let filename = 'app-' + Date.now() + '.html';
+        
+        if (saveFolder) {
+            // שמירה לתיקייה שנבחרה
+            const fileHandle = await saveFolder.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(currentVersion.code);
+            await writable.close();
+            
+            addChatMessage('success', `הפרויקט נשמר בהצלחה: ${filename}`);
+            logToConsole('success', `פרויקט נשמר בתיקייה: ${filename}`);
+        } else {
+            // הורדה רגילה
+            const blob = new Blob([currentVersion.code], { type: 'text/html; charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            addChatMessage('success', `הפרויקט הורד בהצלחה: ${filename}`);
+            logToConsole('success', `פרויקט הורד: ${filename}`);
+        }
+        
+    } catch (error) {
+        addChatMessage('error', 'שגיאה בשמירת הפרויקט: ' + error.message);
+        logToConsole('error', 'שגיאה בשמירה: ' + error.message);
+    }
+}
