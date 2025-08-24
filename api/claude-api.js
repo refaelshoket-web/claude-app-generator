@@ -1,130 +1,86 @@
 export default async function handler(req, res) {
-    // הגדרת CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
-    // טיפול ב-OPTIONS (CORS preflight)
-    if (req.method === 'OPTIONS') {
-        console.log('OPTIONS request - מחזיר CORS headers');
-        return res.status(200).json({ message: 'CORS OK' });
-    }
-
-    // בדיקת GET request פשוטה
+  try {
     if (req.method === 'GET') {
-        console.log('GET request - Vercel Function פעילה!');
-        return res.status(200).json({ 
-            message: 'Claude API Function עובדת!',
-            platform: 'Vercel',
-            timestamp: new Date().toISOString()
-        });
+      return res.status(200).json({
+        message: "Claude API Function עובדת!",
+        platform: "Vercel",
+        timestamp: new Date().toISOString(),
+        status: "active"
+      });
     }
 
-    // בדיקת POST
-    if (req.method !== 'POST') {
-        console.log('Method לא נתמך:', req.method);
-        return res.status(405).json({ 
-            error: 'Method not allowed',
-            allowedMethods: ['GET', 'POST', 'OPTIONS'],
-            receivedMethod: req.method
+    if (req.method === 'POST') {
+      const { apiKey, prompt } = req.body;
+      
+      // Use apiKey from request or environment
+      const API_KEY = apiKey || process.env.ANTHROPIC_API_KEY;
+      
+      if (!API_KEY) {
+        return res.status(500).json({ 
+          error: 'API key not configured',
+          details: 'Neither request apiKey nor environment ANTHROPIC_API_KEY found'
         });
-    }
+      }
 
-    console.log('POST request - מתחיל לעבד...');
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
 
-    try {
-        const { apiKey, prompt } = req.body;
-        
-        console.log('API Key exists:', !!apiKey);
-        console.log('Prompt exists:', !!prompt);
-        console.log('Prompt length:', prompt ? prompt.length : 0);
-
-        // בדיקת פרמטרים
-        if (!apiKey || !prompt) {
-            console.log('חסרים פרמטרים');
-            return res.status(400).json({
-                success: false,
-                error: 'Missing apiKey or prompt',
-                debug: { hasApiKey: !!apiKey, hasPrompt: !!prompt }
-            });
-        }
-
-        // בדיקת API key format
-        if (!apiKey.startsWith('sk-ant-')) {
-            console.log('API key format invalid');
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid API key format',
-                debug: 'API key should start with sk-ant-'
-            });
-        }
-
-        console.log('מתחיל קריאה ל-Anthropic API...');
-
-        // קריאה ל-Anthropic API
-        const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-                model: 'claude-3-sonnet-20240229',
-                max_tokens: 4000,
-                messages: [{ role: 'user', content: prompt }]
-            })
-        });
-
-        console.log('Anthropic API response status:', anthropicResponse.status);
-
-        if (!anthropicResponse.ok) {
-            const errorData = await anthropicResponse.json().catch(e => {
-                console.log('Error parsing Anthropic error response:', e.message);
-                return { error: { message: 'Unknown error from Anthropic' } };
-            });
-            
-            console.log('Anthropic API error:', JSON.stringify(errorData, null, 2));
-            
-            return res.status(anthropicResponse.status).json({
-                success: false,
-                error: errorData.error?.message || `HTTP ${anthropicResponse.status}`,
-                debug: {
-                    anthropicStatus: anthropicResponse.status,
-                    anthropicError: errorData
-                }
-            });
-        }
-
-        const anthropicData = await anthropicResponse.json();
-        console.log('Anthropic API success!');
-        console.log('Response content length:', anthropicData.content?.[0]?.text?.length || 0);
-
-        // החזרת התוצאה
-        return res.status(200).json({
-            success: true,
-            content: anthropicData.content[0].text,
-            debug: {
-                platform: 'Vercel',
-                timestamp: new Date().toISOString(),
-                promptLength: prompt.length,
-                responseLength: anthropicData.content[0].text.length
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-sonnet-20240229',
+          max_tokens: 4000,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
             }
-        });
+          ]
+        })
+      });
 
-    } catch (error) {
-        console.log('Unexpected error:', error.message);
-        console.log('Error stack:', error.stack);
-        
-        return res.status(500).json({
-            success: false,
-            error: error.message,
-            debug: {
-                platform: 'Vercel',
-                errorType: error.constructor.name,
-                errorStack: error.stack,
-                timestamp: new Date().toISOString()
-            }
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('API Error:', errorData);
+        return res.status(response.status).json({ 
+          error: 'Claude API request failed',
+          details: errorData,
+          status: response.status
         });
+      }
+
+      const data = await response.json();
+      
+      return res.status(200).json({
+        success: true,
+        content: data.content[0].text,
+        usage: data.usage
+      });
     }
+
+    res.status(405).json({ error: 'Method not allowed' });
+    
+  } catch (error) {
+    console.error('Function error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
 }
