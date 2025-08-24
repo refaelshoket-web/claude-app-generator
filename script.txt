@@ -1,0 +1,57 @@
+// משתני מערכת גלובליים
+let apiKey = '';
+let saveFolder = null;
+let currentVersion = null;
+let loadedProject = null;
+let selectedWorkMode = null;
+let isProcessing = false;
+let consoleVisible = false;
+
+// מערכת למידה וסטטיסטיקות
+let learningData = {
+    projects: [],
+    modules: [],
+    errors: [],
+    userPreferences: {
+        colors: [],
+        styles: [],
+        patterns: []
+    },
+    stats: {
+        projectCount: 0,
+        moduleCount: 0,
+        errorCount: 0
+    }
+};
+
+// עדכון אינדיקטור חיבור
+function updateConnectionStatus(status, text, details = null) {
+    const dot = document.getElementById('connectionStatus');
+    const textEl = document.getElementById('connectionText');
+    const detailsEl = document.getElementById('connectionDetails');
+    
+    // ניקוי מחלקות קיימות
+    dot.className = 'status-dot';
+    
+    // עדכון סטטוס
+    switch (status) {
+        case 'disconnected':
+            dot.classList.add('disconnected');
+            textEl.textContent = text || 'לא מחובר';
+            textEl.style.color = '#718096';
+            break;
+        case 'connecting':
+            dot.classList.add('connecting');
+            textEl.textContent = text || 'מתחבר...';
+            textEl.style.color = '#ed8936';
+            break;
+        case 'connected':
+            dot.classList.add('connected');
+            textEl.textContent = text || 'מחובר ✓';
+            textEl.style.color = '#38a169';
+            break;
+        case 'error':
+            dot.classList.add('error');
+            textEl.textContent = text || 'שגיאת חיבור';
+            textEl.style.color = '#e53e3e';
+            break;

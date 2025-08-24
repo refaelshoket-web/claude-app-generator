@@ -1,0 +1,1194 @@
+/* איפוס בסיסי */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    direction: rtl;
+    color: #2d3748;
+}
+
+/* קונטיינר ראשי */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 20px;
+    height: calc(100vh - 40px);
+}
+
+/* פאנל הבקרה */
+.control-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 transparent;
+}
+
+.control-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.control-panel::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+/* אזור התצוגה המקדימה */
+.preview-area {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* כותרת */
+.header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.header h1 {
+    color: #4a5568;
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.header p {
+    color: #718096;
+    font-size: 14px;
+}
+
+/* אינדיקטור סטטוס חיבור */
+.api-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #cbd5e0;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.status-dot.connecting {
+    background: #ed8936;
+    animation: pulse 1.5s infinite;
+}
+
+.status-dot.connected {
+    background: #48bb78;
+    box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+}
+
+.status-dot.error {
+    background: #e53e3e;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.7;
+        transform: scale(1.2);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+}
+
+#connectionText {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+/* פרטי חיבור מפורטים */
+.connection-details {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    color: #4a5568;
+    margin-top: 10px;
+    display: none;
+    border-left: 3px solid #4299e1;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.connection-details.show {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 200px;
+    }
+}
+
+.connection-details .detail-line {
+    margin-bottom: 5px;
+    padding: 3px 0;
+}
+
+.connection-details .detail-line.success {
+    color: #38a169;
+}
+
+.connection-details .detail-line.error {
+    color: #e53e3e;
+}
+
+.connection-details .detail-line.info {
+    color: #4299e1;
+}
+
+/* הגדרת API */
+.api-setup {
+    background: #f7fafc;
+    padding: 15px;
+    border-radius: 12px;
+    border: 2px dashed #cbd5e0;
+    transition: all 0.3s ease;
+}
+
+.api-setup.configured {
+    background: #f0fff4;
+    border-color: #68d391;
+}
+
+.api-setup h3 {
+    margin-bottom: 10px;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+.api-setup input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+}
+
+.api-setup input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.api-status {
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.api-status.success {
+    background: #f0fff4;
+    color: #38a169;
+    border: 1px solid #68d391;
+}
+
+.api-status.error {
+    background: #fed7d7;
+    color: #e53e3e;
+    border: 1px solid #feb2b2;
+}
+
+/* כפתורים */
+.btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    background: #a0aec0;
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.6;
+}
+
+.btn.secondary {
+    background: #4a5568;
+}
+
+.btn.danger {
+    background: #e53e3e;
+}
+
+.btn.success {
+    background: #38a169;
+}
+
+.btn.warning {
+    background: #ed8936;
+}
+
+/* כפתור ביצוע מיוחד */
+.execute-btn {
+    font-size: 16px;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+}
+
+.execute-btn:hover {
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.6);
+}
+
+.execute-btn.loading {
+    background: #a0aec0;
+    cursor: wait;
+}
+
+.execute-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* קטעים */
+section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+}
+
+section h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+/* שדות קלט */
+.input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* טעינת קבצים קיימים */
+.load-section {
+    border-left: 4px solid #4299e1;
+}
+
+.file-upload-area {
+    border: 2px dashed #cbd5e0;
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.file-upload-area:hover {
+    border-color: #4299e1;
+    background: #ebf8ff;
+}
+
+.file-upload-area.dragover {
+    border-color: #4299e1;
+    background: #ebf8ff;
+    border-style: solid;
+}
+
+.upload-icon {
+    font-size: 40px;
+    margin-bottom: 15px;
+    opacity: 0.7;
+}
+
+.file-upload-area p {
+    color: #718096;
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.file-upload-area .btn {
+    width: auto;
+    padding: 10px 20px;
+}
+
+.loaded-files {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.loaded-file {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.loaded-file:hover {
+    border-color: #4299e1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.file-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.file-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.file-name {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.file-size {
+    font-size: 11px;
+    color: #718096;
+}
+
+.file-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.file-actions button {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preview-btn {
+    background: #4299e1;
+    color: white;
+}
+
+.remove-btn {
+    background: #e53e3e;
+    color: white;
+}
+
+.analyze-btn {
+    background: #9f7aea;
+    color: white;
+}
+
+/* ניתוח פרויקט */
+.project-analysis {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #9f7aea;
+    margin-top: 15px;
+    display: none;
+}
+
+.project-analysis.show {
+    display: block;
+    animation: slideIn 0.3s ease-out;
+}
+
+.project-analysis h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+.analysis-content {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.analysis-item {
+    background: white;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border-left: 3px solid #cbd5e0;
+}
+
+.analysis-item.type {
+    border-left-color: #4299e1;
+}
+
+.analysis-item.issues {
+    border-left-color: #ed8936;
+}
+
+.analysis-item.suggestions {
+    border-left-color: #48bb78;
+}
+
+.analysis-item strong {
+    color: #4a5568;
+    font-weight: 600;
+}
+
+/* מצבי עבודה */
+.work-modes {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #48bb78;
+    margin-top: 15px;
+    display: none;
+}
+
+.work-modes.show {
+    display: block;
+    animation: slideIn 0.3s ease-out;
+}
+
+.work-modes h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+.mode-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.mode-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-size: 12px;
+}
+
+.mode-btn:hover {
+    border-color: #48bb78;
+    background: #f0fff4;
+}
+
+.mode-btn.active {
+    border-color: #48bb78;
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.mode-icon {
+    font-size: 16px;
+    margin-bottom: 5px;
+    display: block;
+}
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #ed8936;
+}
+
+.file-section h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+.save-path {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #718096;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.save-path.active {
+    color: #38a169;
+    border-color: #68d391;
+    background: #f0fff4;
+}
+
+/* מערכת גרסאות */
+.versions-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #38a169;
+}
+
+.versions-section h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+.version-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.version-controls input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.version-controls .btn {
+    width: auto;
+    padding: 10px 15px;
+}
+
+.versions-list {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.version-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.version-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.version-item.active {
+    border-color: #38a169;
+    background: #f0fff4;
+}
+
+.version-info {
+    flex: 1;
+}
+
+.version-name {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 13px;
+}
+
+.version-date {
+    font-size: 11px;
+    color: #718096;
+    margin-top: 2px;
+}
+
+.version-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.version-actions button {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.version-actions .load-btn {
+    background: #667eea;
+    color: white;
+}
+
+.version-actions .delete-btn {
+    background: #e53e3e;
+    color: white;
+}
+
+/* בקרת קונסול */
+.console-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+.console-controls .btn {
+    font-size: 12px;
+    padding: 8px 10px;
+}
+
+/* סטטיסטיקות למידה */
+.learning-stats {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #9f7aea;
+}
+
+.learning-stats h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.stat {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-number {
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #718096;
+    margin-top: 4px;
+}
+
+/* שדה צ'אט */
+.chat-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    border-left: 4px solid #4299e1;
+}
+
+.chat-section h3 {
+    margin-bottom: 15px;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+.chat-messages {
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+.chat-message {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid #e2e8f0;
+    animation: slideIn 0.3s ease-out;
+}
+
+.chat-message.system {
+    border-left-color: #4299e1;
+    background: #ebf8ff;
+}
+
+.chat-message.user {
+    border-left-color: #38a169;
+    background: #f0fff4;
+}
+
+.chat-message.error {
+    border-left-color: #e53e3e;
+    background: #fed7d7;
+}
+
+.chat-message.success {
+    border-left-color: #38a169;
+    background: #f0fff4;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* כותרת תצוגה מקדימה */
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8f9fa;
+}
+
+.preview-header h3 {
+    color: #4a5568;
+    font-size: 18px;
+}
+
+.preview-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.preview-controls .btn {
+    width: auto;
+    padding: 8px 15px;
+    font-size: 12px;
+}
+
+/* מסגרת התצוגה המקדימה */
+.preview-frame {
+    flex: 1;
+    border: none;
+    background: white;
+    width: 100%;
+    height: 100%;
+}
+
+/* קונסול */
+.console-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.console-overlay.active {
+    display: flex;
+}
+
+.console-window {
+    background: #1a1a1a;
+    border-radius: 12px;
+    width: 80%;
+    height: 70%;
+    max-width: 1000px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.console-header {
+    background: #2d2d2d;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+
+.console-header h3 {
+    color: #fff;
+    font-size: 16px;
+}
+
+.console-close {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.console-close:hover {
+    background: #c53030;
+    transform: scale(1.1);
+}
+
+.console-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #fff;
+}
+
+.console-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.console-content::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.console-content::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.console-line {
+    margin-bottom: 5px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.console-time {
+    color: #888;
+    font-size: 11px;
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+.console-message {
+    flex: 1;
+    word-wrap: break-word;
+}
+
+.console-line.info .console-message {
+    color: #4a9eff;
+}
+
+.console-line.success .console-message {
+    color: #48bb78;
+}
+
+.console-line.error .console-message {
+    color: #f56565;
+}
+
+.console-line.warning .console-message {
+    color: #ed8936;
+}
+
+.console-line.debug .console-message {
+    color: #9ca3af;
+}
+
+/* מודל תצוגת קוד */
+.code-preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.code-preview-modal .modal-content {
+    background: white;
+    border-radius: 15px;
+    width: 90%;
+    height: 80%;
+    max-width: 1000px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+
+.code-preview-modal .modal-header {
+    background: #f8f9fa;
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.code-preview-modal .modal-header h3 {
+    color: #4a5568;
+    font-size: 18px;
+    margin: 0;
+}
+
+.close-btn {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: #c53030;
+    transform: scale(1.1);
+}
+
+.code-preview-modal .modal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+}
+
+.code-preview-modal pre {
+    margin: 0;
+    padding: 20px;
+    background: #1a202c;
+    color: #e2e8f0;
+    font-family: 'Courier New', Monaco, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    height: 100%;
+    overflow: auto;
+}
+
+.code-preview-modal code {
+    color: #e2e8f0;
+}
+
+.code-preview-modal .modal-footer {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.code-preview-modal .modal-footer .btn {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* עיצוב רספונסיבי נוסף */
+@media (max-width: 1200px) {
+    .container {
+        grid-template-columns: 350px 1fr;
+    }
+    
+    .control-panel {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 900px) {
+    .container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: auto;
+    }
+    
+    .control-panel {
+        height: auto;
+        max-height: 60vh;
+    }
+    
+    .preview-area {
+        height: 500px;
+    }
+    
+    .console-window {
+        width: 95%;
+        height: 80%;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        gap: 10px;
+        height: auto;
+    }
+    
+    .control-panel {
+        padding: 15px;
+        gap: 15px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .btn {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    
+    .console-controls {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+    
+    .version-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מחולל אפליקציות חכם ✨</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- פאנל הבקרה -->
+        <div class="control-panel">
+            <!-- כותרת -->
+            <div class="header">
+                <h1>🎯 מחולל אפליקציות חכם</h1>
+                <p>פשטות מקסימלית • עוצמה מקסימלית</p>
+            </div>
+
+            <!-- הגדרת API -->
+            <div class="api-setup" id="apiSetup">
+                <h3>🔑 הגדרת API Key</h3>
+                <div class="api-status-indicator">
+                    <div class="status-dot" id="connectionStatus"></div>
+                    <span id="connectionText">לא מחובר</span>
+                </div>
+                <input type="password" id="apiKey" placeholder="הכנס את ה-API Key שלך">
+                <button class="btn" onclick="setupAPI()">שמור מפתח</button>
+                <button class="btn secondary" onclick="testConnection()">🔍 בדוק חיבור</button>
+                <div class="api-status" id="apiStatus"></div>
+                <div class="connection-details" id="connectionDetails"></div>
+            </div>
+
+            <!-- טעינת קבצים קיימים -->
+            <div class="file-section load-section">
+                <h3>📁 טעינת פרויקט קיים</h3>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <div class="upload-icon">📄</div>
+                    <p>גרור קבצי HTML, CSS, JS לכאן<br>או לחץ לבחירת קבצים</p>
+                    <input type="file" id="fileInput" multiple accept=".html,.css,.js,.htm" style="display: none;">
+                    <button class="btn secondary" onclick="document.getElementById('fileInput').click()">בחר קבצים</button>
+                </div>
+                <div class="loaded-files" id="loadedFiles"></div>
+            </div>
+
+            <!-- בחירת מיקום שמירה -->
+            <div class="file-section">
+                <h3>📂 מיקום שמירה</h3>
+                <button class="btn secondary" onclick="selectSaveFolder()">בחר תיקיית שמירה</button>
+                <div class="save-path" id="savePath">לא נבחרה תיקייה</div>
+            </div>
+
+            <!-- שדה הוראות -->
+            <div class="input-section">
+                <h3>💭 הוראות לפיתוח</h3>
+                
+                <!-- ניתוח פרויקט -->
+                <div class="project-analysis" id="projectAnalysis">
+                    <h3>🔍 ניתוח הפרויקט</h3>
+                    <div class="analysis-content" id="analysisContent"></div>
+                </div>
+                
+                <!-- מצבי עבודה -->
+                <div class="work-modes" id="workModes">
+                    <h3>🛠️ מצבי עבודה</h3>
+                    <div class="mode-buttons">
+                        <div class="mode-btn" data-mode="enhance" onclick="selectWorkMode('enhance')">
+                            <span class="mode-icon">✨</span>
+                            שיפור עיצוב
+                        </div>
+                        <div class="mode-btn" data-mode="fix" onclick="selectWorkMode('fix')">
+                            <span class="mode-icon">🔧</span>
+                            תיקון באגים
+                        </div>
+                        <div class="mode-btn" data-mode="mobile" onclick="selectWorkMode('mobile')">
+                            <span class="mode-icon">📱</span>
+                            מותאם מובייל
+                        </div>
+                        <div class="mode-btn" data-mode="features" onclick="selectWorkMode('features')">
+                            <span class="mode-icon">⚡</span>
+                            הוספת תכונות
+                        </div>
+                        <div class="mode-btn" data-mode="performance" onclick="selectWorkMode('performance')">
+                            <span class="mode-icon">🚀</span>
+                            שיפור ביצועים
+                        </div>
+                        <div class="mode-btn" data-mode="custom" onclick="selectWorkMode('custom')">
+                            <span class="mode-icon">🎯</span>
+                            בקשה מותאמת
+                        </div>
+                    </div>
+                </div>
+                
+                <textarea class="textarea" id="instructions" placeholder="כתוב מה אתה רוצה... 
+לדוגמה: 'אתר למסעדה עם תפריט ותמונות'
+או: 'תקן את הכפתור שלא עובד'"></textarea>
+                
+                <!-- כפתור הביצוע הראשי -->
+                <button class="btn execute-btn" id="executeBtn" onclick="executeInstructions()">
+                    🚀 בצע
+                </button>
+            </div>
+
+            <!-- מערכת גרסאות -->
+            <div class="versions-section">
+                <h3>📚 גרסאות שמורות</h3>
+                <div class="version-controls">
+                    <input type="text" id="versionName" placeholder="שם הגרסה">
+                    <button class="btn success" onclick="saveVersion()">💾 שמור גרסה</button>
+                </div>
+                <div class="versions-list" id="versionsList"></div>
+            </div>
+
+            <!-- כפתורי בקרת קונסול -->
+            <div class="console-controls">
+                <button class="btn secondary" onclick="toggleConsole()">
+                    <span id="consoleToggleText">🖥️ הצג קונסול</span>
+                </button>
+                <button class="btn secondary" onclick="clearConsole()">🧹 נקה קונסול</button>
+                <button class="btn secondary" onclick="exportLog()">📄 ייצא לוג</button>
+            </div>
+
+            <!-- סטטיסטיקות למידה -->
+            <div class="learning-stats" id="learningStats">
+                <h3>🧠 סטטיסטיקות למידה</h3>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat-number" id="projectCount">0</span>
+                        <span class="stat-label">פרויקטים</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" id="moduleCount">0</span>
+                        <span class="stat-label">מודולים</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" id="errorCount">0</span>
+                        <span class="stat-label">שגיאות נפתרו</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- שדה צ'אט -->
+            <div class="chat-section">
+                <h3>💬 הצעות לשיפור</h3>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message system">
+                        ברוך הבא! אני כאן כדי לעזור לך לפתח אפליקציות מדהימות.
+                        רק תגיד לי מה אתה רוצה ואני אדאג לכל השאר! 🎯
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- אזור התצוגה המקדימה -->
+        <div class="preview-area">
+            <div class="preview-header">
+                <h3>🎨 תצוגה מקדימה</h3>
+                <div class="preview-controls">
+                    <button class="btn secondary" onclick="refreshPreview()">🔄 רענן</button>
+                    <button class="btn secondary" onclick="fullscreen()">🖼️ מסך מלא</button>
+                </div>
+            </div>
+            
+            <iframe id="previewFrame" class="preview-frame" src="about:blank">
+                התצוגה המקדימה תופיע כאן...
+            </iframe>
+        </div>
+    </div>
+
+    <!-- קונסול נסתר -->
+    <div class="console-overlay" id="consoleOverlay">
+        <div class="console-window">
+            <div class="console-header">
+                <h3>🖥️ קונסול מערכת</h3>
+                <button class="console-close" onclick="toggleConsole()">✕</button>
+            </div>
+            <div class="console-content" id="consoleContent">
+                <div class="console-line info">
+                    <span class="console-time">[התחלה]</span>
+                    <span class="console-message">מערכת מחולל האפליקציות מוכנה לעבודה ✅</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- טעינת הסקריפט -->
+    <script src="script.js"></script>
+</body>
+</html>
